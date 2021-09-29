@@ -35,6 +35,7 @@
         const score = document.getElementById("score");
         const death = document.getElementById("death");
         const best = document.getElementById("best");
+        best.innerText = localStorage.getItem("sang-snake-game-best") ? +localStorage.getItem("sang-snake-game-best"): 0;
         const main = document.getElementById("main");
         const footer = document.getElementById("footer");
         const LEFTKEY = 37;
@@ -229,6 +230,7 @@
                 score.innerText = +score.innerText + 10;
                 if ((xa.length + 1) === win){
                     best.innerText = +score.innerText;
+                    localStorage.setItem("sang-snake-game-best", +score.innerText);
                     score.innerText = "0";
                     alert("You Win!");
                     restart();
@@ -247,6 +249,7 @@
                     const s = +score.innerText;
                     if (s > b) {
                         best.innerText = s;
+                        localStorage.setItem("sang-snake-game-best", s);
                     }
                     score.innerText = "0";
                     alert("You died!");
