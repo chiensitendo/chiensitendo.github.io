@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+</head>
+<body>
+    <main id = "main" style="display: flex;align-items: center;justify-content: center; position: relative;">
+        <canvas style="border: 1px solid;" id ="frame">
+        </canvas>
+        <div id = "modal" style="display: flex;align-items: center;justify-content: center;background: rgba(0,0,0,0.4);position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
+            <span id = "modalText" style="color: white;">Please Enter to play!</span>
+        </div>
+    </main>
+    <footer id = "footer">
+        <div>
+            <div style="display: flex;align-items: center;justify-content: center;padding: 10px;">
+                <button onclick="lower()">-</button>
+                <div style="margin: 0 5px;">Speed</div>
+                <button onclick="faster()">+</button>
+            </div>
+        </div>
+        <h3 style="text-align: center;margin: 0;padding: 10px 0;">SANG'S SNAKE GAME</h3>
+        <ul style="margin: 0;">
+            <li>Score: <span id = "score">0</span></li>
+            <li>Deaths: <span id = "death">0</span></li>
+            <li>Best Score: <span id = "best">0</span></li>
+        </ul>
+    </footer>
+    <script>
+        const modal = document.getElementById("modal");
+        const modalText = document.getElementById("modalText");
+        const score = document.getElementById("score");
+        const death = document.getElementById("death");
+        const best = document.getElementById("best");
+        const main = document.getElementById("main");
+        const footer = document.getElementById("footer");
+        const LEFTKEY = 37;
+        const UPKEY = 38;
+        const RIGHTKEY = 39;
+        const DOWNKEY = 40;
+        const ENTERKEY = 13;
+        const SPACEKEY = 32;
+        const c = document.getElementById("frame");
+        const ctx = c.getContext("2d");
+        let heig = window.innerHeight;
+        let wid = window.innerWidth;
+        const size = 10;
+        const height = Math.round(heig/size)* size - 200;
+        const width = Math.round(wid/size)* size - 40;
+        ctx.canvas.width  = width;
+        ctx.canvas.height = height;
+        modal.style.width = width + 'px';
+        modal.style.height = height + 'px';
+        footer.style.height = (heig - height - 2 * size) + 'px';
+        const len = 5;
+        var speed = 100;
+        const win = (width*height)/(size * size);
+        var targetX = null;
+        var targetY = null;
+        var endX = null;
+        var endY = null;
+        var xa = [];
+        var ya = [];
+        var isStop = false;
+        var isStart = false;
+        var hoz = 10;
+        var ver = 0;
+        var interval;
+        createASnake(0, 0, len);
+        createATarget();
+        interval = setInterval(() => {
+            if (!isStart){
+                return;
+            }
+            if (isStop){
+                return;
+            }
+            inGame();
+        },[speed]);
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt) {
+                switch (evt.keyCode) {
+                    case DOWNKEY:
+                        const h1 = 0;
+                        const v1 = size;
+                        const c1 = checkKey(h1,v1);
+                        if (!c1) {
+                            hoz = h1;
+                            ver = v1;
+                        }
+                        break;
+                    case UPKEY:
+                        const h2 = 0;
+                        const v2 = -size;
+                        const c2 = checkKey(h2,v2);
+                        if (!c2) {
+                            hoz = h2;
+                            ver = v2;
+                        }
+                        break;
+                    case LEFTKEY:
+                        const h3 = -size;
+                        const v3 = 0;
+                        const c3 = checkKey(h3,v3);
+                        if (!c3) {
+                            hoz = h3;
+                            ver = v3;
+                        }
+                        break;
+                    case RIGHTKEY:
+                        const h4 = size;
+                        const v4 = 0;
+                        const c4 = checkKey(h4,v4);
+                        if (!c4) {
+                            hoz = h4;
+                            ver = v4;
+                        }
+                        break;
+                    case ENTERKEY:
+                        isStart = true;
+                        modal.style.background = "none";
+                        modalText.innerHTML = "";
+                        break;
+                    case SPACEKEY:
+                        isStop = !isStop;
+                        if (isStart) {
+                            if (isStop) {
+                                modal.style.background = "rgba(0,0,0,0.4)";
+                                modalText.innerHTML = "Please SPACE to return!";
+                            } else {
+                                modal.style.background = "none";
+                                modalText.innerHTML = "";
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+        function checkKey(h, v) {
+            if (xa.length > 1) {
+                const xhead = xa[xa.length - 1];
+                const yhead = ya[ya.length - 1];
+                const xn = xhead + h;
+                const yn = yhead + v;
+                const xprehead = xa[xa.length - 2];
+                const yprehead = ya[ya.length - 2];
+                return xn === xprehead && yprehead === yn;
+            }
+        }
+        function createASnake(x, y, len) {
+            for (let index = 0; index < len; index++) {
+                ctx.fillRect(x + index * size, y, size, size);
+                ctx.stroke();
+                xa.push(x + index * size);
+                ya.push(y);
+            }
+
+        }
+        function createATarget() {
+            let randX = getRandomInt(width - 10, 0);
+            let randY = getRandomInt(height - 10, 0);
+            let x = getPosition(randX);
+            let y = getPosition(randY);
+            while(xa.includes(x) && ya.includes(y)) {
+                randX = getRandomInt(width - 10, 0);
+                randY = getRandomInt(height - 10, 0);
+                x = getPosition(randX);
+                y = getPosition(randY);                
+            }
+            if (targetX !== null && targetY !== null) {
+                ctx.clearRect(targetX, targetY, size, size);
+            }
+            targetX = x;
+            targetY = y;
+            ctx.fillRect(x, y, size, size);
+            ctx.stroke();
+        }
+        function restart() {
+            for (let index = 0; index < xa.length; index++) {
+                const xxa = xa[index];
+                const yya = ya[index];
+                ctx.clearRect(xxa,yya, size, size);
+                ctx.stroke();
+            }
+            ctx.clearRect(targetX,targetY, size, size);
+            ctx.stroke();
+            targetX = null;
+            targetY = null;
+            endX = null;
+            endY = null;
+            xa = [];
+            ya = [];
+            isStop = false;
+            isStart = false;
+            hoz = 10;
+            ver = 0;
+            modal.style.background = "rgba(0,0,0,0.4)";
+            modalText.innerHTML = "Please Enter to play!";
+            createASnake(0, 0, len);
+            createATarget();
+        }
+        function inGame() {
+            const xaa = [...xa];
+            const yaa = [...ya];
+            const xhead = xaa[xaa.length - 1];
+            const yhead = yaa[yaa.length - 1];
+
+            let xxx = xhead + hoz;
+            let yyy = yhead + ver;
+            if (xxx > (width - size)){
+                xxx = 0;
+            }
+            if (xxx < 0) {
+                xxx = width - size;
+            }
+            if (yyy > (height - size)){
+                yyy = 0;
+            }
+            if (yyy < 0) {
+                yyy = height - size;
+            }
+            if (xxx === targetX && yyy === targetY) {
+                score.innerText = +score.innerText + 10;
+                if ((xa.length + 1) === win){
+                    best.innerText = +score.innerText;
+                    score.innerText = "0";
+                    alert("You Win!");
+                    restart();
+                    return;
+                }
+                xa.unshift(endX);
+                ya.unshift(endY);
+                createATarget();
+            }
+            for (let index = 0; index < xa.length; index++) {
+                const xEE = xa[index];
+                const yEE = ya[index];
+                if (xEE === xxx && yEE === yyy){
+                    death.innerText = +death.innerText + 1;
+                    const b = +best.innerText;
+                    const s = +score.innerText;
+                    if (s > b) {
+                        best.innerText = s;
+                    }
+                    score.innerText = "0";
+                    alert("You died!");
+                    restart();
+                    return;
+                }
+            }
+            ctx.clearRect(xa[xa.length - 1], ya[ya.length - 1], size, size);
+            xa[xa.length - 1] = xxx;
+            ya[ya.length - 1] = yyy;
+            ctx.fillRect(xa[xa.length - 1], ya[ya.length - 1], size, size);
+            ctx.stroke();
+            endX = xaa[0];
+            endY = yaa[0];
+            for (let index = xa.length - 2; index >= 0; index--) {
+                const xE = xaa[index + 1];
+                const yE = yaa[index + 1];
+                ctx.clearRect(xa[index], ya[index], size, size);
+                xa[index] = xE;
+                ya[index] = yE;
+                ctx.fillRect(xa[index], ya[index], size, size);
+                ctx.stroke();
+            }
+        }
+        function getRandomInt(max, min) {
+        return Math.floor(Math.random() * (max - min) + min);
+        }
+        function getPosition(rand) {
+            const d = Math.floor(rand/size);
+            return d*size;
+        }
+        function lower(){
+            console.log(speed);
+            if (speed === 1000) {
+                return;
+            }
+            clearInterval(interval);
+            speed += 10;
+            interval = setInterval(() => {
+            if (!isStart){
+                return;
+            }
+            if (isStop){
+                return;
+            }
+                inGame();
+            },[speed]);
+        }
+        function faster() {
+            if (speed === 50) {
+                return;
+            }
+            speed -= 10;
+            clearInterval(interval);
+            interval = setInterval(() => {
+            if (!isStart){
+                return;
+            }
+            if (isStop){
+                return;
+            }
+                inGame();
+            },[speed]);
+        }
+        function handleTouch() {
+            console.log("asdasd");
+        }
+        function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+        }
+    </script>
+</body>
+</html>
